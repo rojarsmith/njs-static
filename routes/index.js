@@ -36,9 +36,33 @@ router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
   res.send();
 });
 
+router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
+  var files = req.files;
+  console.log(files);
+  if (files) {
+    files.file.forEach(function (file) {
+      logFile('File', file);
+    })
+  };
+
+  res.send();
+});
+
 router.post('/single-image', uploadImages.single('file'), async (req, res) => {
   var file = req.file;
   logFile('Image', file);
+  res.send();
+});
+
+router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
+  var files = req.files;
+  console.log(files);
+  if (files) {
+    files.file.forEach(function (file) {
+      logFile('Image', file);
+    })
+  };
+
   res.send();
 });
 
