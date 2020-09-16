@@ -107,11 +107,27 @@ router.post('/single-image', uploadImages.single('file'), async (req, res) => {
 
 router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
   var files = req.files;
+  var insertData = [];
   console.log(files);
   if (files) {
     files.file.forEach(function (file) {
-      logFile('Image', file);
+      insertData.push({
+        "file": file.filename,
+        "size": file.size
+      });
     })
+
+    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+      function (err, db) {
+        if (err) throw err;
+        var dbo = db.db("testdb");
+        dbo.collection("images").insertMany(insertData
+          , function (err, res) {
+            if (err) throw err;
+            console.log(insertData);
+            db.close();
+          });
+      });
   };
 
   res.send();
