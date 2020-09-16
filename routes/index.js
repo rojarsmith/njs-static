@@ -7,23 +7,6 @@ var fs = require('fs');
 var mongo = require('mongodb')
 var mongoClient = require('mongodb').MongoClient;
 
-// mongoClient.connect(process.env.APP_MONGODB_LINK,
-//   function (err, db) {
-//     if (err) throw err;
-//     console.log("Database connected!");
-//     var dbo = db.db("testdb");
-//     dbo.collection("students").insertOne({ "name": "Abhishek", "marks": 100 }, function (err, res) {
-//       if (err) throw err;
-//       console.log("1 document inserted");
-//       db.close();
-//     });
-//     dbo.collection("students").insertMany([{ "name": "Abhishek2", "marks": 200 }, { "name": "Abhishek3", "marks": 300 }], function (err, res) {
-//       if (err) throw err;
-//       console.log("1 document inserted");
-//       db.close();
-//     });
-//   });
-
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, process.env.APP_FILES_STORAGE)
@@ -75,11 +58,28 @@ router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
 
 router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
   var files = req.files;
+  var insertData = [];
   console.log(files);
   if (files) {
     files.file.forEach(function (file) {
+      insertData.push({
+        "file": file.filename,
+        "size": file.size
+      });
       logFile('File', file);
     })
+
+    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+      function (err, db) {
+        if (err) throw err;
+        var dbo = db.db("testdb");
+        dbo.collection("files").insertMany(insertData
+          , function (err, res) {
+            if (err) throw err;
+            console.log(insertData);
+            db.close();
+          });
+      });
   };
 
   res.send();
