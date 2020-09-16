@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var multer = require('multer');
+var fs = require('fs');
 
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -64,6 +65,30 @@ router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }
   };
 
   res.send();
+});
+
+router.get('/uploads/files/*', async (req, res) => {
+  var path = req.params[0] ? req.params[0] : '/';
+  res.sendFile(path, { root: process.env.APP_FILES_STORAGE }, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(err.status).end();
+    } else {
+      console.log('Load file: ' + req.params[0] + ' correct.');
+    }
+  });
+});
+
+router.get('/uploads/images/*', async (req, res) => {
+  var path = req.params[0] ? req.params[0] : '/';
+  res.sendFile(path, { root: process.env.APP_IMAGES_STORAGE }, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(err.status).end();
+    } else {
+      console.log('Load image: ' + req.params[0] + ' correct.');
+    }
+  });
 });
 
 function logFile(type, file) {
