@@ -5,11 +5,9 @@ var multer = require('multer');
 var fs = require('fs');
 
 var mongo = require('mongodb')
-var MongoClient = require('mongodb').MongoClient;
+var mongoClient = require('mongodb').MongoClient;
 
-var url = "mongodb://localhost:27017/testdb";
-
-MongoClient.connect(process.env.APP_MONGODB_LINK,
+mongoClient.connect(process.env.APP_MONGODB_LINK,
   function (err, db) {
     if (err) throw err;
     console.log("Database connected!");
@@ -75,7 +73,21 @@ router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }])
 
 router.post('/single-image', uploadImages.single('file'), async (req, res) => {
   var file = req.file;
-  logFile('Image', file);
+
+  mongoClient.connect(process.env.APP_MONGODB_LINK,
+    function (err, db) {
+      if (err) throw err;
+      var dbo = db.db("testdb");
+      dbo.collection("images").insertOne({
+        "image": file.filename,
+        "size": file.size
+      }, function (err, res) {
+        if (err) throw err;
+        logFile('Image', file);
+        db.close();
+      });
+    });
+
   res.send();
 });
 
@@ -117,9 +129,9 @@ router.get('/uploads/images/*', async (req, res) => {
 
 function logFile(type, file) {
   console.log('  ' + type + ' uploaded');
-  console.log('    Path: %s', file.filename);
+  console.log('    Name: %s', file.filename);
   console.log('    Type: %s', file.mimetype);
-  console.log('    Name: %s', file.originalname);
+  console.log('    Original Name: %s', file.originalname);
   console.log('    Size: %s', file.size);
   console.log('    Path: %s', file.path);
   console.log('    Field: %s', file.fieldname);
