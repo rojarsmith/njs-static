@@ -1,4 +1,5 @@
 var express = require('express');
+var path = require('path');
 var router = express.Router();
 var multer = require('multer');
 var fs = require('fs');
@@ -8,7 +9,7 @@ var MongoClient = require('mongodb').MongoClient;
 
 var url = "mongodb://localhost:27017/testdb";
 
-MongoClient.connect(url,
+MongoClient.connect(process.env.APP_MONGODB_LINK,
   function (err, db) {
     if (err) throw err;
     console.log("Database connected!");
@@ -36,7 +37,8 @@ var storageImages = multer.diskStorage({
     cb(null, process.env.APP_IMAGES_STORAGE)
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname + '-' + Date.now() + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1]) //Appending .jpg
+    var basename = path.basename(file.originalname, path.extname(file.originalname));
+    cb(null, basename + '-' + Date.now() + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1]) //Appending .jpg
   }
 });
 
