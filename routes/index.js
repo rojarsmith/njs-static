@@ -3,6 +3,28 @@ var router = express.Router();
 var multer = require('multer');
 var fs = require('fs');
 
+var mongo = require('mongodb')
+var MongoClient = require('mongodb').MongoClient;
+
+var url = "mongodb://localhost:27017/testdb";
+
+MongoClient.connect(url,
+  function (err, db) {
+    if (err) throw err;
+    console.log("Database connected!");
+    var dbo = db.db("testdb");
+    dbo.collection("students").insertOne({ "name": "Abhishek", "marks": 100 }, function (err, res) {
+      if (err) throw err;
+      console.log("1 document inserted");
+      db.close();
+    });
+    dbo.collection("students").insertMany([{ "name": "Abhishek2", "marks": 200 }, { "name": "Abhishek3", "marks": 300 }], function (err, res) {
+      if (err) throw err;
+      console.log("1 document inserted");
+      db.close();
+    });
+  });
+
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, process.env.APP_FILES_STORAGE)
