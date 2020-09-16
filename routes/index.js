@@ -7,22 +7,22 @@ var fs = require('fs');
 var mongo = require('mongodb')
 var mongoClient = require('mongodb').MongoClient;
 
-mongoClient.connect(process.env.APP_MONGODB_LINK,
-  function (err, db) {
-    if (err) throw err;
-    console.log("Database connected!");
-    var dbo = db.db("testdb");
-    dbo.collection("students").insertOne({ "name": "Abhishek", "marks": 100 }, function (err, res) {
-      if (err) throw err;
-      console.log("1 document inserted");
-      db.close();
-    });
-    dbo.collection("students").insertMany([{ "name": "Abhishek2", "marks": 200 }, { "name": "Abhishek3", "marks": 300 }], function (err, res) {
-      if (err) throw err;
-      console.log("1 document inserted");
-      db.close();
-    });
-  });
+// mongoClient.connect(process.env.APP_MONGODB_LINK,
+//   function (err, db) {
+//     if (err) throw err;
+//     console.log("Database connected!");
+//     var dbo = db.db("testdb");
+//     dbo.collection("students").insertOne({ "name": "Abhishek", "marks": 100 }, function (err, res) {
+//       if (err) throw err;
+//       console.log("1 document inserted");
+//       db.close();
+//     });
+//     dbo.collection("students").insertMany([{ "name": "Abhishek2", "marks": 200 }, { "name": "Abhishek3", "marks": 300 }], function (err, res) {
+//       if (err) throw err;
+//       console.log("1 document inserted");
+//       db.close();
+//     });
+//   });
 
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -55,7 +55,21 @@ router.get('/', function (req, res, next) {
 
 router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
   var file = req.file;
-  logFile('File', file);
+
+  mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+    function (err, db) {
+      if (err) throw err;
+      var dbo = db.db("testdb");
+      dbo.collection("files").insertOne({
+        "file": file.filename,
+        "size": file.size
+      }, function (err, res) {
+        if (err) throw err;
+        logFile('File', file);
+        db.close();
+      });
+    });
+
   res.send();
 });
 
