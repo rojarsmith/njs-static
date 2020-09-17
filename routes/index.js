@@ -133,6 +133,18 @@ router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }
   res.send();
 });
 
+router.get('/public/*', async (req, res) => {
+  var path = req.params[0] ? req.params[0] : '/';
+  res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
+    if (err) {
+      console.log(err);
+      res.status(err.status).end();
+    } else {
+      console.log('Load file: ' + req.params[0] + ' correct.');
+    }
+  });
+});
+
 router.get('/uploads/files/*', async (req, res) => {
   var path = req.params[0] ? req.params[0] : '/';
   res.sendFile(path, { root: process.env.APP_FILES_STORAGE }, function (err) {
@@ -155,6 +167,52 @@ router.get('/uploads/images/*', async (req, res) => {
       console.log('Load image: ' + req.params[0] + ' correct.');
     }
   });
+});
+
+router.get('/action/rebuild-file-index', async (req, res) => {
+  fs.readdir(process.env.APP_FILES_STORAGE, function (err, files) {
+    if (err) {
+      console.log(err);
+      res.status(err.status).end();
+    }
+
+    if (files) {
+      files.forEach(function (file) {
+        var file_full_path = path.join(process.env.APP_FILES_STORAGE, file);
+        fs.stat(file_full_path, function (err, stats) {
+          console.log(file_full_path);
+          if (!err && !stats.isDirectory()) {
+            mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+              function (err, db) {
+                if (err) throw err;
+                var dbo = db.db("testdb");
+                dbo.collection("files").find({
+                  file: file,
+                }).toArray(function (err, res) {
+                  if (err) throw err;
+                  console.log(res);
+
+                  if (res.length === 0) {
+                    dbo.collection("files").insertOne({
+                      "file": file,
+                      "size": stats.size
+                    }, function (err, res) {
+                      if (err) throw err;
+                      console.log(file + ' inserted.');
+                      db.close();
+                    });
+                  } else {
+                    console.log('Record existed.');
+                  }
+                });
+              });
+          }
+        });
+      });
+    }
+
+    res.send();
+  })
 });
 
 router.get('/action/rebuild-image-index', async (req, res) => {
