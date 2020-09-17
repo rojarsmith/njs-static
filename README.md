@@ -2,6 +2,15 @@
 
 The node.js static service.
 
+## Select Config
+
+```powershell
+set NODE_ENV=development
+set NODE_ENV=production
+```
+
+
+
 ## Debug
 
 Windows:

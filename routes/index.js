@@ -157,6 +157,53 @@ router.get('/uploads/images/*', async (req, res) => {
   });
 });
 
+router.get('/action/rebuild-image-index', async (req, res) => {
+  fs.readdir(process.env.APP_IMAGES_STORAGE, function (err, files) {
+    if (err) {
+      console.log(err);
+      res.status(err.status).end();
+    }
+
+    if (files) {
+      files.forEach(function (file) {
+        var file_full_path = path.join(process.env.APP_IMAGES_STORAGE, file);
+        fs.stat(file_full_path, function (err, stats) {
+          console.log(file_full_path);
+          if (!err && !stats.isDirectory()) {
+            mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+              function (err, db) {
+                if (err) throw err;
+                var dbo = db.db("testdb");
+                dbo.collection("images").find({
+                  image: file,
+                }).toArray(function (err, res) {
+                  if (err) throw err;
+                  console.log(res);
+                  console.log(res.length);
+
+                  if (res.length === 0) {
+                    dbo.collection("images").insertOne({
+                      "image": file,
+                      "size": stats.size
+                    }, function (err, res) {
+                      if (err) throw err;
+                      console.log(file + ' inserted.');
+                      db.close();
+                    });
+                  } else {
+                    console.log('Record existed.');
+                  }
+                });
+              });
+          }
+        });
+      });
+    }
+
+    res.send();
+  })
+});
+
 function logFile(type, file) {
   console.log('  ' + type + ' uploaded');
   console.log('    Name: %s', file.filename);
