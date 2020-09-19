@@ -4,7 +4,6 @@ module.exports = {
     {
       name: 'njs-static',
       script: 'app.js',
-      cwd: '~/service/static/njs-static',
       exec_mode: 'cluster',
       instance: 0,
       watch: false,
