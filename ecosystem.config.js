@@ -32,7 +32,7 @@ module.exports = {
       repo: 'git@github.com:rojarsmith/njs-static.git',
       path: '~/service/static/njs-static',
       'pre-deploy-local': '',
-      'post-deploy': 'cp ~/service/static/.env.production ~/service/static/njs-static/current/ && npm install && pm2 reload ecosystem.config.js --env production',
+      'post-deploy': 'cp ~/service/static/.env.production ~/service/static/njs-static/current/ && npm install && npm audit fix && pm2 reload ecosystem.config.js --env production',
       'pre-setup': '',
       env_production: {
         NODE_ENV: 'production'
