@@ -93,7 +93,7 @@ router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }])
     mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
       function (err, db) {
         if (err) throw err;
-        var dbo = db.db("testdb");
+        var dbo = db.db(process.env.APP_MONGODB_NAME);
         dbo.collection("files").insertMany(insertData
           , function (err, res) {
             if (err) throw err;
@@ -109,10 +109,15 @@ router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }])
 router.post('/single-image', uploadImages.single('file'), async (req, res) => {
   var file = req.file;
 
+  if (typeof file === 'undefined') {
+    res.status(400).send();
+    return;
+  }
+
   mongoClient.connect(process.env.APP_MONGODB_LINK,
     function (err, db) {
       if (err) throw err;
-      var dbo = db.db("testdb");
+      var dbo = db.db(process.env.APP_MONGODB_NAME);
       dbo.collection("images").insertOne({
         "image": file.filename,
         "size": file.size
@@ -123,7 +128,11 @@ router.post('/single-image', uploadImages.single('file'), async (req, res) => {
       });
     });
 
-  res.send();
+  res.send({
+    name: file.filename,
+    size: file.size,
+    Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
+  });
 });
 
 router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
