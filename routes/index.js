@@ -263,7 +263,7 @@ router.get('/action/rebuild-file-index', async (req, res) => {
       });
     }
 
-    res.send();
+    res.send("Rebuild completed.");
   })
 });
 
@@ -320,7 +320,7 @@ router.get('/action/rebuild-image-index', async (req, res) => {
       });
     }
 
-    res.send();
+    res.send("Rebuild completed.");
   })
 });
 
