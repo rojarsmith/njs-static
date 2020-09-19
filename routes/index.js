@@ -67,13 +67,25 @@ router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
 
 router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
   var files = req.files;
+
+  if (typeof files === 'undefined') {
+    res.status(400).send();
+    return;
+  }
+
   var insertData = [];
+  var returnData = [];
   console.log(files);
   if (files) {
     files.file.forEach(function (file) {
       insertData.push({
         "file": file.filename,
         "size": file.size
+      });
+      returnData.push({
+        name: file.filename,
+        size: file.size,
+        Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
       });
       logFile('File', file);
     })
@@ -91,7 +103,7 @@ router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }])
       });
   };
 
-  res.send();
+  res.send(returnData);
 });
 
 router.post('/single-image', uploadImages.single('file'), async (req, res) => {
