@@ -137,13 +137,25 @@ router.post('/single-image', uploadImages.single('file'), async (req, res) => {
 
 router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
   var files = req.files;
+
+  if (typeof files === 'undefined') {
+    res.status(400).send();
+    return;
+  }
+
   var insertData = [];
+  var returnData = [];
   console.log(files);
   if (files) {
     files.file.forEach(function (file) {
       insertData.push({
         "file": file.filename,
         "size": file.size
+      });
+      returnData.push({
+        name: file.filename,
+        size: file.size,
+        Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
       });
     })
 
