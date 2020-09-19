@@ -3,22 +3,40 @@ module.exports = {
     // First application
     {
       name: 'njs-static',
-      script: 'app.js',
-      exec_mode: 'cluster',
-      instance: 0,
+      script: 'bin/www',
+      exec_mode: 'fork',
+      // instance: 1,
       watch: false,
       max_memory_restart: '200M',
       time: true,
       log_date_format: 'YYYY-MM-DD HH:mm Z',
-      error_file: '~/service/log',
-      out_file: '~/service/log',
+      error_file: '~/service/static/log',
+      out_file: '~/service/static/log',
       autorestart: true,
       env: {
-        COMMON_VARIABLE: "true"
+        COMMON_VARIABLE: "true",
+        NODE_ENV: 'development',
+        "PORT": "3030"
       },
       env_production: {
         NODE_ENV: 'production'
       }
     }
-  ]
+  ],
+  deploy: {
+    production: {
+      user: 'root',
+      host: '172.105.222.93',
+      ref: 'origin/master',
+      ssh_options: 'StrictHostKeyChecking=no',
+      repo: 'git@github.com:rojarsmith/njs-static.git',
+      path: '~/service/static/njs-static',
+      'pre-deploy-local': '',
+      'post-deploy': 'cp ~/service/static/.env.production ~/service/static/njs-static/current/ && npm install && pm2 reload ecosystem.config.js --env production',
+      'pre-setup': '',
+      env_production: {
+        NODE_ENV: 'production'
+      }
+    }
+  }
 };
