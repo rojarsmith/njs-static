@@ -39,10 +39,15 @@ router.get('/', function (req, res, next) {
 router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
   var file = req.file;
 
-  mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+  if (typeof file === 'undefined') {
+    res.status(400).send();
+    return;
+  }
+
+  mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true },
     function (err, db) {
       if (err) throw err;
-      var dbo = db.db("testdb");
+      var dbo = db.db(process.env.APP_MONGODB_NAME);
       dbo.collection("files").insertOne({
         "file": file.filename,
         "size": file.size
@@ -53,7 +58,11 @@ router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
       });
     });
 
-  res.send();
+  res.send({
+    name: file.filename,
+    size: file.size,
+    Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
+  });
 });
 
 router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
