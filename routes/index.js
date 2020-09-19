@@ -162,7 +162,7 @@ router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }
     mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
       function (err, db) {
         if (err) throw err;
-        var dbo = db.db("testdb");
+        var dbo = db.db(process.env.APP_MONGODB_NAME);
         dbo.collection("images").insertMany(insertData
           , function (err, res) {
             if (err) throw err;
@@ -218,6 +218,16 @@ router.get('/action/rebuild-file-index', async (req, res) => {
       res.status(err.status).end();
     }
 
+    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+      function (err, db) {
+        if (err) throw err;
+        var dbo = db.db(process.env.APP_MONGODB_NAME);
+        dbo.collection("files").drop(function (err, res) {
+          if (err) throw err;
+          db.close();
+        });
+      });
+
     if (files) {
       files.forEach(function (file) {
         var file_full_path = path.join(process.env.APP_FILES_STORAGE, file);
@@ -227,7 +237,7 @@ router.get('/action/rebuild-file-index', async (req, res) => {
             mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
               function (err, db) {
                 if (err) throw err;
-                var dbo = db.db("testdb");
+                var dbo = db.db(process.env.APP_MONGODB_NAME);
                 dbo.collection("files").find({
                   file: file,
                 }).toArray(function (err, res) {
@@ -264,6 +274,16 @@ router.get('/action/rebuild-image-index', async (req, res) => {
       res.status(err.status).end();
     }
 
+    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+      function (err, db) {
+        if (err) throw err;
+        var dbo = db.db(process.env.APP_MONGODB_NAME);
+        dbo.collection("images").drop(function (err, res) {
+          if (err) throw err;
+          db.close();
+        });
+      });
+
     if (files) {
       files.forEach(function (file) {
         var file_full_path = path.join(process.env.APP_IMAGES_STORAGE, file);
@@ -273,7 +293,7 @@ router.get('/action/rebuild-image-index', async (req, res) => {
             mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
               function (err, db) {
                 if (err) throw err;
-                var dbo = db.db("testdb");
+                var dbo = db.db(process.env.APP_MONGODB_NAME);
                 dbo.collection("images").find({
                   image: file,
                 }).toArray(function (err, res) {
