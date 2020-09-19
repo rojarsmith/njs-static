@@ -172,7 +172,7 @@ router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }
       });
   };
 
-  res.send();
+  res.send(returnData);
 });
 
 router.get('/public/*', async (req, res) => {
