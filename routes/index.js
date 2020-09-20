@@ -4,7 +4,9 @@ var router = express.Router();
 var multer = require('multer');
 var fs = require('fs');
 
-var mongo = require('mongodb')
+var mongo = require('mongodb');
+const { resolve } = require('path');
+const { rejects } = require('assert');
 var mongoClient = require('mongodb').MongoClient;
 
 var storageFiles = multer.diskStorage({
@@ -149,7 +151,7 @@ router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }
   if (files) {
     files.file.forEach(function (file) {
       insertData.push({
-        "file": file.filename,
+        "image": file.filename,
         "size": file.size
       });
       returnData.push({
@@ -322,6 +324,76 @@ router.get('/action/rebuild-image-index', async (req, res) => {
 
     res.send("Rebuild completed.");
   })
+});
+
+router.post('/action/check-reources-exist', async (req, res) => {
+  try {
+    var data = req.body;
+
+    if (Object.keys(data).length === 0 && data.constructor === Object) {
+      res.status(400).send();
+      return;
+    }
+
+    var coll = '';
+    var qp1 = '';
+
+    if (data.type === 'image') {
+      coll = 'images';
+      qp1 = 'image';
+    } else {
+      coll = 'files';
+      qp1 = 'file';
+    }
+
+    var query = {};
+    query[qp1] = { $in: data.names };
+
+    var returnData = [];
+    var queryData = [];
+
+    let db = null;
+
+    mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true }, async (err, client) => {
+      if (err) {
+        console.log(err);
+      }
+      db = await client.db(process.env.APP_MONGODB_NAME);
+      console.log('Database connected');
+
+      var dbPromise = () => {
+        return new Promise((resolve, reject) => {
+          db.collection(coll).find(query).toArray(function (err, res) {
+            err ? reject(err) : resolve(res);
+          });
+        })
+      };
+
+      var qRes = await dbPromise();
+
+      client.close();
+      // res.send(qRes); // For debug.
+
+      data.names.forEach(function (value, index, array) {
+        var isExist = false;
+
+        qRes.forEach(function (value2, index2, array2) {
+
+          if (value2[qp1] === value) {
+            console.log(value + ' existed.');
+            isExist = true;
+          }
+        });
+        returnData.push({
+          "name": value,
+          "exist": isExist
+        });
+      });
+      res.send(returnData);
+    });
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 function logFile(type, file) {
