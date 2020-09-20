@@ -179,19 +179,23 @@ router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }
 
 router.post('/delete/multi', async (req, res) => {
   try {
+    if (('Bearer ' + process.env.APP_ACCESS_TOKEN) !== req.header('authorization')) {
+      console.log('Authorize failed.');
+      res.status(400).send();
+      return;
+    }
+
     var data = req.body;
-    console.log(data);
+
     if (Object.keys(data).length === 0 && data.constructor === Object) {
       res.status(400).send();
       return;
     }
 
     var cf = getCollectionAndField(data.type);
-    console.log(cf);
-    console.log(cf.field);
     var query = {};
     query[cf.field] = { $in: data.names };
-    console.log(query);
+
     mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true }, async (err, client) => {
       if (err) {
         console.log(err);
