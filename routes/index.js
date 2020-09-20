@@ -38,33 +38,39 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.post('/single-file', uploadFiles.single('file'), async (req, res) => {
-  var file = req.file;
+router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, next) => {
+  try {
+    var file = req.file;
 
-  if (typeof file === 'undefined') {
-    res.status(400).send();
-    return;
-  }
+    if (typeof file === 'undefined') {
+      console.log('File undefined.');
+      res.status(400).send();
+      return;
+    }
 
-  mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true },
-    function (err, db) {
-      if (err) throw err;
-      var dbo = db.db(process.env.APP_MONGODB_NAME);
-      dbo.collection("files").insertOne({
-        "file": file.filename,
-        "size": file.size
-      }, function (err, res) {
+    mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true },
+      function (err, db) {
         if (err) throw err;
-        logFile('File', file);
-        db.close();
+        var dbo = db.db(process.env.APP_MONGODB_NAME);
+        dbo.collection("files").insertOne({
+          "file": file.filename,
+          "size": file.size
+        }, function (err, res) {
+          if (err) throw err;
+          console.log(file + ' inserted.');
+          db.close();
+        });
       });
-    });
 
-  res.send({
-    name: file.filename,
-    size: file.size,
-    Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
-  });
+    res.send({
+      name: file.filename,
+      size: file.size,
+      Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
 });
 
 router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
