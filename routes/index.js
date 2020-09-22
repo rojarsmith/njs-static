@@ -38,6 +38,9 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+
+
+
 router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, next) => {
   try {
     var file = req.file;
@@ -48,19 +51,28 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
       return;
     }
 
-    mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true },
-      function (err, db) {
+    await mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true },
+      async function (err, client) {
         if (err) throw err;
-        var dbo = db.db(process.env.APP_MONGODB_NAME);
-        dbo.collection("files").insertOne({
-          "file": file.filename,
-          "size": file.size
-        }, function (err, res) {
-          if (err) throw err;
-          console.log(file + ' inserted.');
-          db.close();
-        });
+        var dbo = await client.db(process.env.APP_MONGODB_NAME);
+
+        var dbPromise = () => {
+          return new Promise((resolve, reject) => {
+            dbo.collection("files").insertOne({
+              "file": file.filename,
+              "size": file.size
+            }, function (err, res) {
+              err ? reject(err) : resolve(res);
+            });
+          })
+        };
+
+        var qRes = await dbPromise().catch(err => console.log('error:', err.message));
+
+        await client.close();
       });
+
+
 
     res.send({
       name: file.filename,
