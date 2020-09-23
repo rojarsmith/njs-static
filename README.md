@@ -22,6 +22,14 @@ npm start
 
 
 
+## Deploy
+
+```bash
+pm2 deploy ecosystem.config.js production --force
+```
+
+
+
 ## Mogodb backup
 
 Windows:

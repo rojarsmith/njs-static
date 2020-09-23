@@ -76,7 +76,7 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
     res.send({
       name: file.filename,
       size: file.size,
-      url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
+      url: process.env.APP_RESOURECES_BASE_URL + '/file/' + file.filename
     });
   } catch (error) {
     console.log(error);
@@ -106,7 +106,7 @@ router.post('/file/upload/fields', uploadFiles.fields([{ name: 'file', maxCount:
         returnData.push({
           name: file.filename,
           size: file.size,
-          Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
+          Url: process.env.APP_RESOURECES_BASE_URL + '/file/' + file.filename
         });
       })
 
@@ -158,7 +158,7 @@ router.post('/image/upload/single', uploadImages.single('file'), async (req, res
     res.send({
       name: file.filename,
       size: file.size,
-      Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
+      Url: process.env.APP_RESOURECES_BASE_URL + '/image/' + file.filename
     });
   } catch (error) {
     console.log(error);
@@ -188,7 +188,7 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
         returnData.push({
           name: file.filename,
           size: file.size,
-          Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
+          Url: process.env.APP_RESOURECES_BASE_URL + '/image/' + file.filename
         });
       })
 
@@ -205,6 +205,57 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
     };
 
     res.send(returnData);
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
+});
+
+router.get('/public/*', async (req, res) => {
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load file: ' + req.params[0] + ' correct.');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
+});
+
+router.get('/file/*', async (req, res) => {
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_FILES_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load file: ' + req.params[0] + ' correct.');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
+});
+
+router.get('/image/*', async (req, res) => {
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_IMAGES_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load image: ' + req.params[0] + ' correct.');
+      }
+    });
   } catch (error) {
     console.log(error);
     res.status(400).send();
@@ -257,158 +308,139 @@ router.post('/action/delete/fields', async (req, res) => {
   }
 });
 
-router.get('/public/*', async (req, res) => {
+router.get('/action/rebuild-file-index', async (req, res) => {
   try {
-    var path = req.params[0] ? req.params[0] : '/';
-    res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
+    if (('Bearer ' + process.env.APP_ACCESS_TOKEN) !== req.header('authorization')) {
+      console.log('Authorize failed.');
+      res.status(400).send();
+      return;
+    }
+
+    fs.readdir(process.env.APP_FILES_STORAGE, function (err, files) {
       if (err) {
         console.log(err);
         res.status(err.status).end();
-      } else {
-        console.log('Load file: ' + req.params[0] + ' correct.');
       }
-    });
+
+      mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+        function (err, db) {
+          if (err) throw err;
+          var dbo = db.db(process.env.APP_MONGODB_NAME);
+          dbo.collection("files").drop(function (err, res) {
+            if (err) throw err;
+            db.close();
+          });
+        });
+
+      if (files) {
+        files.forEach(function (file) {
+          var file_full_path = path.join(process.env.APP_FILES_STORAGE, file);
+          fs.stat(file_full_path, function (err, stats) {
+            console.log(file_full_path);
+            if (!err && !stats.isDirectory()) {
+              mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+                function (err, db) {
+                  if (err) throw err;
+                  var dbo = db.db(process.env.APP_MONGODB_NAME);
+                  dbo.collection("files").find({
+                    file: file,
+                  }).toArray(function (err, res) {
+                    if (err) throw err;
+                    console.log(res);
+
+                    if (res.length === 0) {
+                      dbo.collection("files").insertOne({
+                        "file": file,
+                        "size": stats.size
+                      }, function (err, res) {
+                        if (err) throw err;
+                        console.log(file + ' inserted.');
+                        db.close();
+                      });
+                    } else {
+                      console.log('Record existed.');
+                    }
+                  });
+                });
+            }
+          });
+        });
+      }
+
+      res.send("Rebuild completed.");
+    })
   } catch (error) {
     console.log(error);
     res.status(400).send();
   }
 });
 
-router.get('/uploads/files/*', async (req, res) => {
-  var path = req.params[0] ? req.params[0] : '/';
-  res.sendFile(path, { root: process.env.APP_FILES_STORAGE }, function (err) {
-    if (err) {
-      console.log(err);
-      res.status(err.status).end();
-    } else {
-      console.log('Load file: ' + req.params[0] + ' correct.');
-    }
-  });
-});
-
-router.get('/uploads/images/*', async (req, res) => {
-  var path = req.params[0] ? req.params[0] : '/';
-  res.sendFile(path, { root: process.env.APP_IMAGES_STORAGE }, function (err) {
-    if (err) {
-      console.log(err);
-      res.status(err.status).end();
-    } else {
-      console.log('Load image: ' + req.params[0] + ' correct.');
-    }
-  });
-});
-
-router.get('/action/rebuild-file-index', async (req, res) => {
-  fs.readdir(process.env.APP_FILES_STORAGE, function (err, files) {
-    if (err) {
-      console.log(err);
-      res.status(err.status).end();
-    }
-
-    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
-      function (err, db) {
-        if (err) throw err;
-        var dbo = db.db(process.env.APP_MONGODB_NAME);
-        dbo.collection("files").drop(function (err, res) {
-          if (err) throw err;
-          db.close();
-        });
-      });
-
-    if (files) {
-      files.forEach(function (file) {
-        var file_full_path = path.join(process.env.APP_FILES_STORAGE, file);
-        fs.stat(file_full_path, function (err, stats) {
-          console.log(file_full_path);
-          if (!err && !stats.isDirectory()) {
-            mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
-              function (err, db) {
-                if (err) throw err;
-                var dbo = db.db(process.env.APP_MONGODB_NAME);
-                dbo.collection("files").find({
-                  file: file,
-                }).toArray(function (err, res) {
-                  if (err) throw err;
-                  console.log(res);
-
-                  if (res.length === 0) {
-                    dbo.collection("files").insertOne({
-                      "file": file,
-                      "size": stats.size
-                    }, function (err, res) {
-                      if (err) throw err;
-                      console.log(file + ' inserted.');
-                      db.close();
-                    });
-                  } else {
-                    console.log('Record existed.');
-                  }
-                });
-              });
-          }
-        });
-      });
-    }
-
-    res.send("Rebuild completed.");
-  })
-});
-
 router.get('/action/rebuild-image-index', async (req, res) => {
-  fs.readdir(process.env.APP_IMAGES_STORAGE, function (err, files) {
-    if (err) {
-      console.log(err);
-      res.status(err.status).end();
+  try {
+    if (('Bearer ' + process.env.APP_ACCESS_TOKEN) !== req.header('authorization')) {
+      console.log('Authorize failed.');
+      res.status(400).send();
+      return;
     }
 
-    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
-      function (err, db) {
-        if (err) throw err;
-        var dbo = db.db(process.env.APP_MONGODB_NAME);
-        dbo.collection("images").drop(function (err, res) {
+    fs.readdir(process.env.APP_IMAGES_STORAGE, function (err, files) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      }
+
+      mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+        function (err, db) {
           if (err) throw err;
-          db.close();
+          var dbo = db.db(process.env.APP_MONGODB_NAME);
+          dbo.collection("images").drop(function (err, res) {
+            if (err) throw err;
+            db.close();
+          });
         });
-      });
 
-    if (files) {
-      files.forEach(function (file) {
-        var file_full_path = path.join(process.env.APP_IMAGES_STORAGE, file);
-        fs.stat(file_full_path, function (err, stats) {
-          console.log(file_full_path);
-          if (!err && !stats.isDirectory()) {
-            mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
-              function (err, db) {
-                if (err) throw err;
-                var dbo = db.db(process.env.APP_MONGODB_NAME);
-                dbo.collection("images").find({
-                  image: file,
-                }).toArray(function (err, res) {
+      if (files) {
+        files.forEach(function (file) {
+          var file_full_path = path.join(process.env.APP_IMAGES_STORAGE, file);
+          fs.stat(file_full_path, function (err, stats) {
+            console.log(file_full_path);
+            if (!err && !stats.isDirectory()) {
+              mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
+                function (err, db) {
                   if (err) throw err;
-                  console.log(res);
-                  console.log(res.length);
+                  var dbo = db.db(process.env.APP_MONGODB_NAME);
+                  dbo.collection("images").find({
+                    image: file,
+                  }).toArray(function (err, res) {
+                    if (err) throw err;
+                    console.log(res);
+                    console.log(res.length);
 
-                  if (res.length === 0) {
-                    dbo.collection("images").insertOne({
-                      "image": file,
-                      "size": stats.size
-                    }, function (err, res) {
-                      if (err) throw err;
-                      console.log(file + ' inserted.');
-                      db.close();
-                    });
-                  } else {
-                    console.log('Record existed.');
-                  }
+                    if (res.length === 0) {
+                      dbo.collection("images").insertOne({
+                        "image": file,
+                        "size": stats.size
+                      }, function (err, res) {
+                        if (err) throw err;
+                        console.log(file + ' inserted.');
+                        db.close();
+                      });
+                    } else {
+                      console.log('Record existed.');
+                    }
+                  });
                 });
-              });
-          }
+            }
+          });
         });
-      });
-    }
+      }
 
-    res.send("Rebuild completed.");
-  })
+      res.send("Rebuild completed.");
+    })
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
 });
 
 router.post('/action/check-reources-exist', async (req, res) => {
@@ -491,16 +523,6 @@ function getCollectionAndField(type) {
     returnData['field'] = 'file';
   }
   return returnData;
-}
-
-function logFile(type, file) {
-  console.log('  ' + type + ' uploaded');
-  console.log('    Name: %s', file.filename);
-  console.log('    Type: %s', file.mimetype);
-  console.log('    Original Name: %s', file.originalname);
-  console.log('    Size: %s', file.size);
-  console.log('    Path: %s', file.path);
-  console.log('    Field: %s', file.fieldname);
 }
 
 module.exports = router;
