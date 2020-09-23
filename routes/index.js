@@ -164,44 +164,49 @@ router.post('/image/upload/single', uploadImages.single('file'), async (req, res
   }
 });
 
-router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
-  var files = req.files;
+router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
+  try {
+    var files = req.files;
 
-  if (typeof files === 'undefined') {
+    if (typeof files === 'undefined') {
+      console.log('File undefined.');
+      res.status(400).send();
+      return;
+    }
+
+    var insertData = [];
+    var returnData = [];
+    console.log(files);
+    if (files) {
+      files.file.forEach(function (file) {
+        insertData.push({
+          "image": file.filename,
+          "size": file.size
+        });
+        returnData.push({
+          name: file.filename,
+          size: file.size,
+          Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
+        });
+      })
+
+      await mongoCli.connect(
+        conn,
+        () => { },
+        (err) => { console.log(err) });
+
+      await mongoCli.insertDocument('images', insertData);
+
+      await mongoCli.teardown(
+        () => { },
+        (err) => { console.log(err) });
+    };
+
+    res.send(returnData);
+  } catch (error) {
+    console.log(error);
     res.status(400).send();
-    return;
   }
-
-  var insertData = [];
-  var returnData = [];
-  console.log(files);
-  if (files) {
-    files.file.forEach(function (file) {
-      insertData.push({
-        "image": file.filename,
-        "size": file.size
-      });
-      returnData.push({
-        name: file.filename,
-        size: file.size,
-        Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
-      });
-    })
-
-    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
-      function (err, db) {
-        if (err) throw err;
-        var dbo = db.db(process.env.APP_MONGODB_NAME);
-        dbo.collection("images").insertMany(insertData
-          , function (err, res) {
-            if (err) throw err;
-            console.log(insertData);
-            db.close();
-          });
-      });
-  };
-
-  res.send(returnData);
 });
 
 router.post('/delete/multi', async (req, res) => {
