@@ -8,7 +8,7 @@ describe('Upload endpoint', () => {
 
     test('Uploads single file.', async () => {
         console.log(filePath);
-        return await request(app)
+        await request(app)
             .post('/file/upload/single')
             .attach('file', filePath)
             .then((res) => {
@@ -22,7 +22,7 @@ describe('Upload endpoint', () => {
 
     test('Uploads single image.', async () => {
         console.log(filePath);
-        return await request(app)
+        await request(app)
             .post('/image/upload/single')
             .attach('file', filePath)
             .then((res) => {
