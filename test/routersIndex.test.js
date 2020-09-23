@@ -19,4 +19,18 @@ describe('Upload endpoint', () => {
             })
             .catch(err => console.log(err));
     })
+
+    test('Uploads single image.', async () => {
+        console.log(filePath);
+        return await request(app)
+            .post('/image/upload/single')
+            .attach('file', filePath)
+            .then((res) => {
+                console.log(res.body);
+                const { name, size, url } = res.body;
+                expect(size).toBeGreaterThan(0);
+                expect(res.statusCode).toBe(200);
+            })
+            .catch(err => console.log(err));
+    })
 })

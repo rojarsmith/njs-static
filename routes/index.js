@@ -9,7 +9,7 @@ const { resolve } = require('path');
 const { rejects } = require('assert');
 var mongoClient = require('mongodb').MongoClient;
 var mongoMod = require('../utility/mongoClient');
-var mongoClient3 = new mongoMod.mongoDbClient();
+var mongoCli = new mongoMod.mongoDbClient();
 
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -60,14 +60,14 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
       dbName: process.env.APP_MONGODB_NAME
     }
 
-    await mongoClient3.connect(
+    await mongoCli.connect(
       conn,
       () => { },
       (err) => { console.log(err) });
 
-    await mongoClient3.insertDocument('files', inse);
+    await mongoCli.insertDocument('files', inse);
 
-    await mongoClient3.teardown(
+    await mongoCli.teardown(
       () => { },
       (err) => { console.log(err) });
 
@@ -123,33 +123,46 @@ router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }])
   res.send(returnData);
 });
 
-router.post('/single-image', uploadImages.single('file'), async (req, res) => {
-  var file = req.file;
+router.post('/image/upload/single', uploadImages.single('file'), async (req, res) => {
+  try {
+    var file = req.file;
 
-  if (typeof file === 'undefined') {
-    res.status(400).send();
-    return;
-  }
+    if (typeof file === 'undefined') {
+      console.log('File undefined.');
+      res.status(400).send();
+      return;
+    }
 
-  mongoClient.connect(process.env.APP_MONGODB_LINK,
-    function (err, db) {
-      if (err) throw err;
-      var dbo = db.db(process.env.APP_MONGODB_NAME);
-      dbo.collection("images").insertOne({
-        "image": file.filename,
-        "size": file.size
-      }, function (err, res) {
-        if (err) throw err;
-        logFile('Image', file);
-        db.close();
-      });
+    var inse = {
+      "image": file.filename,
+      "size": file.size
+    }
+
+    var conn = {
+      url: process.env.APP_MONGODB_LINK,
+      dbName: process.env.APP_MONGODB_NAME
+    }
+
+    await mongoCli.connect(
+      conn,
+      () => { },
+      (err) => { console.log(err) });
+
+    await mongoCli.insertDocument('images', inse);
+
+    await mongoCli.teardown(
+      () => { },
+      (err) => { console.log(err) });
+
+    res.send({
+      name: file.filename,
+      size: file.size,
+      Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
     });
-
-  res.send({
-    name: file.filename,
-    size: file.size,
-    Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/images/' + file.filename
-  });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
 });
 
 router.post('/fields-image', uploadImages.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
