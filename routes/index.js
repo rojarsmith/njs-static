@@ -74,7 +74,7 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
     res.send({
       name: file.filename,
       size: file.size,
-      Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
+      url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
     });
   } catch (error) {
     console.log(error);
