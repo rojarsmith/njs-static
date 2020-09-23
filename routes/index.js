@@ -8,6 +8,8 @@ var mongo = require('mongodb');
 const { resolve } = require('path');
 const { rejects } = require('assert');
 var mongoClient = require('mongodb').MongoClient;
+var mongoMod = require('../utility/mongoClient');
+var mongoClient3 = new mongoMod.mongoDbClient();
 
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -38,9 +40,6 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-
-
-
 router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, next) => {
   try {
     var file = req.file;
@@ -51,28 +50,26 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
       return;
     }
 
-    await mongoClient.connect(process.env.APP_MONGODB_LINK, { useNewUrlParser: true, useUnifiedTopology: true },
-      async function (err, client) {
-        if (err) throw err;
-        var dbo = await client.db(process.env.APP_MONGODB_NAME);
+    var inse = {
+      "file": file.filename,
+      "size": file.size
+    }
 
-        var dbPromise = () => {
-          return new Promise((resolve, reject) => {
-            dbo.collection("files").insertOne({
-              "file": file.filename,
-              "size": file.size
-            }, function (err, res) {
-              err ? reject(err) : resolve(res);
-            });
-          })
-        };
+    var conn = {
+      url: process.env.APP_MONGODB_LINK,
+      dbName: process.env.APP_MONGODB_NAME
+    }
 
-        var qRes = await dbPromise().catch(err => console.log('error:', err.message));
+    await mongoClient3.connect(
+      conn,
+      () => { },
+      (err) => { console.log(err) });
 
-        await client.close();
-      });
+    await mongoClient3.insertDocument('files', inse);
 
-
+    await mongoClient3.teardown(
+      () => { },
+      (err) => { console.log(err) });
 
     res.send({
       name: file.filename,
