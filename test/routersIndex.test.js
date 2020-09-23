@@ -12,8 +12,8 @@ describe('Upload endpoint', () => {
             .post('/file/upload/single')
             .attach('file', filePath)
             .then((res) => {
+                console.log(res.body);
                 const { name, size, url } = res.body;
-                expect(name).to
                 expect(size).toBeGreaterThan(0);
                 expect(res.statusCode).toBe(200);
             })
