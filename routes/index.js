@@ -11,6 +11,11 @@ var mongoClient = require('mongodb').MongoClient;
 var mongoMod = require('../utility/mongoClient');
 var mongoCli = new mongoMod.mongoDbClient();
 
+var conn = {
+  url: process.env.APP_MONGODB_LINK,
+  dbName: process.env.APP_MONGODB_NAME
+}
+
 var storageFiles = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, process.env.APP_FILES_STORAGE)
@@ -55,11 +60,6 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
       "size": file.size
     }
 
-    var conn = {
-      url: process.env.APP_MONGODB_LINK,
-      dbName: process.env.APP_MONGODB_NAME
-    }
-
     await mongoCli.connect(
       conn,
       () => { },
@@ -82,45 +82,49 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
   }
 });
 
-router.post('/fields-file', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
-  var files = req.files;
+router.post('/file/upload/fields', uploadFiles.fields([{ name: 'file', maxCount: 16 }]), async (req, res) => {
+  try {
+    var files = req.files;
 
-  if (typeof files === 'undefined') {
+    if (typeof files === 'undefined') {
+      console.log('File undefined.');
+      res.status(400).send();
+      return;
+    }
+
+    var insertData = [];
+    var returnData = [];
+
+    if (files) {
+      files.file.forEach(function (file) {
+        insertData.push({
+          "file": file.filename,
+          "size": file.size
+        });
+        returnData.push({
+          name: file.filename,
+          size: file.size,
+          Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
+        });
+      })
+
+      await mongoCli.connect(
+        conn,
+        () => { },
+        (err) => { console.log(err) });
+
+      await mongoCli.insertDocument('files', insertData);
+
+      await mongoCli.teardown(
+        () => { },
+        (err) => { console.log(err) });
+    };
+
+    res.send(returnData);
+  } catch (error) {
+    console.log(error);
     res.status(400).send();
-    return;
   }
-
-  var insertData = [];
-  var returnData = [];
-  console.log(files);
-  if (files) {
-    files.file.forEach(function (file) {
-      insertData.push({
-        "file": file.filename,
-        "size": file.size
-      });
-      returnData.push({
-        name: file.filename,
-        size: file.size,
-        Url: process.env.APP_RESOURECES_BASE_URL + '/uploads/files/' + file.filename
-      });
-      logFile('File', file);
-    })
-
-    mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
-      function (err, db) {
-        if (err) throw err;
-        var dbo = db.db(process.env.APP_MONGODB_NAME);
-        dbo.collection("files").insertMany(insertData
-          , function (err, res) {
-            if (err) throw err;
-            console.log(insertData);
-            db.close();
-          });
-      });
-  };
-
-  res.send(returnData);
 });
 
 router.post('/image/upload/single', uploadImages.single('file'), async (req, res) => {
@@ -136,11 +140,6 @@ router.post('/image/upload/single', uploadImages.single('file'), async (req, res
     var inse = {
       "image": file.filename,
       "size": file.size
-    }
-
-    var conn = {
-      url: process.env.APP_MONGODB_LINK,
-      dbName: process.env.APP_MONGODB_NAME
     }
 
     await mongoCli.connect(

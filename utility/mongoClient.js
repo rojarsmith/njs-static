@@ -65,12 +65,16 @@ class mongoDbClient {
 
     async insertDocument(coll, doc) {
         try {
-            if (!isObject(doc)) {
-                throw Error("mongoClient.insertDocument: document is not an object")
+            if (!isObject(doc) && !Array.isArray(doc)) {
+                throw Error("mongoClient.insertDocument: document is not an object or array.")
                 return
             }
 
-            return await this.db.collection(coll).insertOne(doc)
+            if(doc.length >= 2){
+                return await this.db.collection(coll).insertMany(doc);
+            }else{
+                return await this.db.collection(coll).insertOne(doc);
+            }
         }
         catch (e) {
             console.log("MongoClient.InsertDocument: Error caught,", e)
