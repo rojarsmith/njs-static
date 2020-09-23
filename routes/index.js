@@ -45,6 +45,8 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+
+
 router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, next) => {
   try {
     var file = req.file;
@@ -209,7 +211,7 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
   }
 });
 
-router.post('/delete/multi', async (req, res) => {
+router.post('/action/delete/fields', async (req, res) => {
   try {
     if (('Bearer ' + process.env.APP_ACCESS_TOKEN) !== req.header('authorization')) {
       console.log('Authorize failed.');
@@ -256,15 +258,20 @@ router.post('/delete/multi', async (req, res) => {
 });
 
 router.get('/public/*', async (req, res) => {
-  var path = req.params[0] ? req.params[0] : '/';
-  res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
-    if (err) {
-      console.log(err);
-      res.status(err.status).end();
-    } else {
-      console.log('Load file: ' + req.params[0] + ' correct.');
-    }
-  });
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load file: ' + req.params[0] + ' correct.');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
 });
 
 router.get('/uploads/files/*', async (req, res) => {
