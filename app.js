@@ -4,6 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
+var moment = require('moment');
 
 require('dotenv').config({ path: path.join(__dirname, `.env.${process.env.NODE_ENV}`) });
 
@@ -23,6 +24,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+var requestTime = function (req, res, next) {
+  var now = moment().format('MMMM Do, h:mm:ss a');
+  var ip =
+  (req.headers["x-forwarded-for"] || "").split(",").pop() ||
+  req.connection.remoteAddress ||
+  req.socket.remoteAddress ||
+  req.connection.socket.remoteAddress;
+  console.log('[REQ] ' + now.toString() + ' Client=' + ip);
+  next();
+};
+
+app.use(requestTime);
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
