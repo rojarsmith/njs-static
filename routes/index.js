@@ -40,12 +40,62 @@ var uploadImages = multer({
   storage: storageImages
 });
 
+const promisify = function (nodeFunction) {
+  return function (...args) {
+    return new Promise((resolve, reject) => {
+      nodeFunction.call(this, ...args, (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      });
+    });
+  };
+};
+
+const readDir = promisify(fs.readdir);
+const fileStat = promisify(fs.stat);
+
+const getFilesPath = async (dir) => {
+  let files = await readDir(dir);
+
+  let result = files.map(file => {
+    let filePath = path.join(dir, file);
+    return fileStat(filePath).then(stat => {
+      if (!stat.isDirectory()) {
+        if (typeof file !== 'undefined') {
+          return file;
+        }
+      }
+    });
+  });
+
+  var res = await Promise.all(result);
+  res = res.filter(function (el) {
+    return el != null;
+  })
+
+  return await Promise.all(res);
+};
+
 /* GET home page. */
-router.get('/', function (req, res, next) {
-  res.render('index', { title: 'Express' });
+router.get('/', async function (req, res, next) {
+  var viewData = { title: 'NJS Static Service' };
+
+  try {
+    let files = await getFilesPath(process.env.APP_FILES_STORAGE);
+    let images = await getFilesPath(process.env.APP_IMAGES_STORAGE);
+
+    viewData['files_count'] = files.length;
+    viewData['images_count'] = images.length;
+
+    res.render('index', viewData);
+  } catch (error) {
+    console.log(error);
+    res.status(400).send();
+  }
 });
-
-
 
 router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, next) => {
   try {
