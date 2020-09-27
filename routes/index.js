@@ -564,7 +564,7 @@ router.post('/action/check-reources-exist', async (req, res) => {
 });
 
 router.get('/action/health', async (req, res) => {
-  var returnData = [];
+  var returnData = {};
 
   try {
     await mongoCli.connect(
