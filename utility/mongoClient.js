@@ -47,19 +47,33 @@ class mongoDbClient {
         )
     }
 
+    async runCommand(cmd) {
+        try {
+            if (!isObject(cmd)) {
+                throw Error("mongoClient.runCommand: cmd is not an object");
+                return;
+            }
+            return await this.db.command(cmd);
+        }
+        catch (e) {
+            console.log("mongoClient.runCommand: Error caught,", e);
+            return Promise.reject(e);
+        }
+    }
+
     async insertDocumentWithIndex(coll, doc) {
         try {
             if (!isObject(doc)) {
-                throw Error("mongoClient.insertDocumentWithIndex: document is not an object")
-                return
+                throw Error("mongoClient.insertDocumentWithIndex: document is not an object");
+                return;
             }
-            var index = await this.getNextSequence(coll)
-            doc.idx = index.value.seq
-            return await this.db.collection(coll).insertOne(doc)
+            var index = await this.getNextSequence(coll);
+            doc.idx = index.value.seq;
+            return await this.db.collection(coll).insertOne(doc);
         }
         catch (e) {
-            console.log("mongoClient.insertDocumentWithIndex: Error caught,", e)
-            return Promise.reject(e)
+            console.log("mongoClient.insertDocumentWithIndex: Error caught,", e);
+            return Promise.reject(e);
         }
     }
 
@@ -70,9 +84,9 @@ class mongoDbClient {
                 return
             }
 
-            if(doc.length >= 2){
+            if (doc.length >= 2) {
                 return await this.db.collection(coll).insertMany(doc);
-            }else{
+            } else {
                 return await this.db.collection(coll).insertOne(doc);
             }
         }

@@ -563,6 +563,31 @@ router.post('/action/check-reources-exist', async (req, res) => {
   }
 });
 
+router.get('/action/health', async (req, res) => {
+  var returnData = [];
+
+  try {
+    await mongoCli.connect(
+      conn,
+      () => { },
+      (err) => { console.log(err) });
+
+    var dataDb = await mongoCli.runCommand({ serverStatus: 1, repl: 1 });
+
+    await mongoCli.teardown(
+      () => { },
+      (err) => { console.log(err) });
+
+    if (dataDb.uptime > 0) {
+      returnData['mongodb'] = 'OK';
+    }
+  } catch (e) {
+    console.log(e);
+  }
+  console.log(returnData);
+  res.send(returnData);
+});
+
 function getCollectionAndField(type) {
   var returnData = {};
   if (type === 'image') {

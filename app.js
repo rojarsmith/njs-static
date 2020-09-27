@@ -28,10 +28,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 var requestTime = function (req, res, next) {
   var now = moment().format('MMMM Do, h:mm:ss a');
   var ip =
-  (req.headers["x-forwarded-for"] || "").split(",").pop() ||
-  req.connection.remoteAddress ||
-  req.socket.remoteAddress ||
-  req.connection.socket.remoteAddress;
+    (req.headers["x-forwarded-for"] || "").split(",").pop() ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    req.connection.socket.remoteAddress;
   console.log('[REQ] ' + now.toString() + ' Client=' + ip);
   next();
 };
