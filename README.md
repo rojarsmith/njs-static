@@ -40,3 +40,6 @@ mongodump -h localhost -d testdb
 mongorestore -h localhost -d testdb dump\testdb
 ```
 
+## Known issue
+
+Don't use http access api.
