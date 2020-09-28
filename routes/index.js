@@ -3,6 +3,7 @@ var path = require('path');
 var router = express.Router();
 var multer = require('multer');
 var fs = require('fs');
+var uuid = require('uuid')
 
 var mongo = require('mongodb');
 const { resolve } = require('path');
@@ -27,8 +28,8 @@ var storageImages = multer.diskStorage({
     cb(null, process.env.APP_IMAGES_STORAGE)
   },
   filename: function (req, file, cb) {
-    var basename = path.basename(file.originalname, path.extname(file.originalname));
-    cb(null, basename + '-' + Date.now() + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1]) //Appending .jpg
+    let suuid = uuid.v1().substring(0,8);
+    cb(null, Date.now() + '-' + suuid + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1]) //Appending .jpg
   }
 });
 
@@ -228,7 +229,7 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
 
     var insertData = [];
     var returnData = [];
-    console.log(files);
+
     if (files) {
       files.file.forEach(function (file) {
         insertData.push({
