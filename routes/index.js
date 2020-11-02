@@ -88,13 +88,23 @@ router.get('/', async function (req, res, next) {
     let files = await getFilesPath(process.env.APP_FILES_STORAGE);
     let images = await getFilesPath(process.env.APP_IMAGES_STORAGE);
 
+    if (!files || !images) {
+      throw new Error('Load files or images failed.');
+    }
+
     viewData['files_count'] = files.length;
     viewData['images_count'] = images.length;
 
     res.render('index', viewData);
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -104,8 +114,7 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
 
     if (typeof file === 'undefined') {
       console.log('File undefined.');
-      res.status(400).send();
-      return;
+      throw new Error('File undefined.');
     }
 
     var inse = {
@@ -124,14 +133,28 @@ router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, 
       () => { },
       (err) => { console.log(err) });
 
-    res.send({
+    let data = {
       name: file.filename,
       size: file.size,
       url: process.env.APP_RESOURECES_BASE_URL + '/file/' + file.filename
-    });
+    };
+
+    let payload = {
+      "success": true,
+      "message": "Upload single file success.",
+      "data": data,
+      "trace": null
+    };
+    res.send(payload);
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,  // "Upload single file failed.",
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -263,10 +286,23 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
         (err) => { console.log(err) });
     };
 
-    res.send(returnData);
+    let payload = {
+      "success": true,
+      "message": "Upload images with fields success.",
+      "data": returnData,
+      "trace": null
+    };
+
+    res.send(payload);
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": "Upload images with fields failed.",
+      "data": null,
+      "trace": error
+    };
+    res.status(400).send(payload);
   }
 });
 
