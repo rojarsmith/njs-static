@@ -9,6 +9,7 @@ var moment = require('moment');
 require('dotenv').config({ path: path.join(__dirname, `.env.${process.env.NODE_ENV}`) });
 
 var indexRouter = require('./routes/index');
+var apiV1Router = require('./routes/api.v1');
 var usersRouter = require('./routes/users');
 
 var app = express();
@@ -39,6 +40,7 @@ var requestTime = function (req, res, next) {
 app.use(requestTime);
 
 app.use('/', indexRouter);
+app.use('/api/v1', apiV1Router);
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
