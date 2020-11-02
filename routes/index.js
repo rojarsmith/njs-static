@@ -28,7 +28,7 @@ var storageImages = multer.diskStorage({
     cb(null, process.env.APP_IMAGES_STORAGE)
   },
   filename: function (req, file, cb) {
-    let suuid = uuid.v1().substring(0,8);
+    let suuid = uuid.v1().substring(0, 8);
     cb(null, Date.now() + '-' + suuid + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1]) //Appending .jpg
   }
 });
@@ -166,7 +166,11 @@ router.post('/file/upload/fields', uploadFiles.fields([{ name: 'file', maxCount:
         () => { },
         (err) => { console.log(err) });
 
-      await mongoCli.insertDocument('files', insertData);
+      if (files.file.length <= 1) {
+        await mongoCli.insertDocument('files', insertData[0]);
+      } else {
+        await mongoCli.insertDocument('files', insertData);
+      }
 
       await mongoCli.teardown(
         () => { },
@@ -248,7 +252,11 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
         () => { },
         (err) => { console.log(err) });
 
-      await mongoCli.insertDocument('images', insertData);
+      if (files.file.length <= 1) {
+        await mongoCli.insertDocument('images', insertData[0]);
+      } else {
+        await mongoCli.insertDocument('images', insertData);
+      }
 
       await mongoCli.teardown(
         () => { },
