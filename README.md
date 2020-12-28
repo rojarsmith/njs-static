@@ -18,6 +18,8 @@ Windows:
 ```powershell
 SET DEBUG=njs-static:*
 npm start
+
+nodemon ./bin/www // Auto reload
 ```
 
 

@@ -80,34 +80,6 @@ const getFilesPath = async (dir) => {
   return await Promise.all(res);
 };
 
-/* GET home page. */
-router.get('/', async function (req, res, next) {
-  var viewData = { title: 'NJS Static Service' };
-
-  try {
-    let files = await getFilesPath(process.env.APP_FILES_STORAGE);
-    let images = await getFilesPath(process.env.APP_IMAGES_STORAGE);
-
-    if (!files || !images) {
-      throw new Error('Load files or images failed.');
-    }
-
-    viewData['files_count'] = files.length;
-    viewData['images_count'] = images.length;
-
-    res.render('index', viewData);
-  } catch (error) {
-    console.log(error);
-    let payload = {
-      "success": false,
-      "message": error.message,
-      "data": null,
-      "trace": error.stack
-    };
-    res.status(400).send(payload);
-  }
-});
-
 router.post('/file/upload/single', uploadFiles.single('file'), async (req, res, next) => {
   try {
     var file = req.file;
@@ -200,10 +172,22 @@ router.post('/file/upload/fields', uploadFiles.fields([{ name: 'file', maxCount:
         (err) => { console.log(err) });
     };
 
-    res.send(returnData);
+    let payload = {
+      "success": true,
+      "message": "Upload field of files success.",
+      "data": returnData,
+      "trace": null
+    };
+    res.send(payload);
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -233,14 +217,27 @@ router.post('/image/upload/single', uploadImages.single('file'), async (req, res
       () => { },
       (err) => { console.log(err) });
 
-    res.send({
-      name: file.filename,
-      size: file.size,
-      Url: process.env.APP_RESOURECES_BASE_URL + '/image/' + file.filename
-    });
+    let payload = {
+      "success": true,
+      "message": "Upload single image success.",
+      "data": {
+        name: file.filename,
+        size: file.size,
+        Url: process.env.APP_RESOURECES_BASE_URL + '/image/' + file.filename
+      },
+      "trace": null
+    };
+
+    res.send(payload);
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,  // "Upload single file failed.",
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -288,7 +285,7 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
 
     let payload = {
       "success": true,
-      "message": "Upload images with fields success.",
+      "message": "Upload field of images success.",
       "data": returnData,
       "trace": null
     };
@@ -298,7 +295,7 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
     console.log(error);
     let payload = {
       "success": false,
-      "message": "Upload images with fields failed.",
+      "message": error.message,
       "data": null,
       "trace": error
     };
@@ -395,11 +392,23 @@ router.post('/action/delete/fields', async (req, res) => {
 
       client.close();
 
-      res.send();
+      let payload = {
+        "success": true,
+        "message": "Delete field of resources success.",
+        "data": data,
+        "trace": null
+      };
+      res.send(payload);
     });
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -407,14 +416,26 @@ router.get('/action/rebuild-file-index', async (req, res) => {
   try {
     if (('Bearer ' + process.env.APP_ACCESS_TOKEN) !== req.header('authorization')) {
       console.log('Authorize failed.');
-      res.status(400).send();
+      let payload = {
+        "success": true,
+        "message": "Authorize failed.",
+        "data": null,
+        "trace": null
+      };
+      res.status(400).send(payload);
       return;
     }
 
     fs.readdir(process.env.APP_FILES_STORAGE, function (err, files) {
       if (err) {
         console.log(err);
-        res.status(err.status).end();
+        let payload = {
+          "success": true,
+          "message": err.message,
+          "data": null,
+          "trace": null
+        };
+        res.status(err.status).send(payload).end();
       }
 
       mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
@@ -462,11 +483,23 @@ router.get('/action/rebuild-file-index', async (req, res) => {
         });
       }
 
-      res.send("Rebuild completed.");
+      let payload = {
+        "success": true,
+        "message": "Rebuild completed.",
+        "data": null,
+        "trace": null
+      };
+      res.send(payload);
     })
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -474,14 +507,27 @@ router.get('/action/rebuild-image-index', async (req, res) => {
   try {
     if (('Bearer ' + process.env.APP_ACCESS_TOKEN) !== req.header('authorization')) {
       console.log('Authorize failed.');
-      res.status(400).send();
+      let payload = {
+        "success": true,
+        "message": "Authorize failed.",
+        "data": null,
+        "trace": null
+      };
+      res.status(400).send(payload);
       return;
     }
 
     fs.readdir(process.env.APP_IMAGES_STORAGE, function (err, files) {
       if (err) {
         console.log(err);
-        res.status(err.status).end();
+        let payload = {
+          "success": true,
+          "message": err.message,
+          "data": null,
+          "trace": null
+        };
+        res.status(err.status).send(payload).end();
+        return;
       }
 
       mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
@@ -530,11 +576,23 @@ router.get('/action/rebuild-image-index', async (req, res) => {
         });
       }
 
-      res.send("Rebuild completed.");
+      let payload = {
+        "success": true,
+        "message": "Rebuild completed.",
+        "data": null,
+        "trace": null
+      };
+      res.send(payload);
     })
   } catch (error) {
     console.log(error);
-    res.status(400).send();
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -601,10 +659,24 @@ router.post('/action/check-reources-exist', async (req, res) => {
           "exist": isExist
         });
       });
-      res.send(returnData);
+
+      let payload = {
+        "success": true,
+        "message": "Check resources success.",
+        "data": returnData,
+        "trace": null
+      };
+      res.send(payload);
     });
-  } catch (e) {
-    console.log(e);
+  } catch (error) {
+    console.log(error);
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    res.status(400).send(payload);
   }
 });
 
@@ -615,22 +687,43 @@ router.get('/action/health', async (req, res) => {
     await mongoCli.connect(
       conn,
       () => { },
-      (err) => { console.log(err) });
+      (err) => {
+        console.log(err);
+        throw err;
+      });
 
     var dataDb = await mongoCli.runCommand({ serverStatus: 1, repl: 1 });
 
     await mongoCli.teardown(
       () => { },
-      (err) => { console.log(err) });
+      (err) => {
+        console.log(err);
+        throw err;
+      });
 
     if (dataDb.uptime > 0) {
       returnData['mongodb'] = 'OK';
     }
-  } catch (e) {
-    console.log(e);
+  } catch (err) {
+    console.log(err);
+    let payload = {
+      "success": false,
+      "message": err.message,
+      "data": null,
+      "trace": err.stack
+    };
+    res.status(400).send(payload).end();
+    return;
   }
+
   console.log(returnData);
-  res.send(returnData);
+  let payload = {
+    "success": true,
+    "message": "Check health success.",
+    "data": returnData,
+    "trace": null
+  };
+  res.send(payload);
 });
 
 function getCollectionAndField(type) {
