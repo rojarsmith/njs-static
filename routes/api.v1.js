@@ -603,6 +603,69 @@ router.post('/action/reources-count', async (req, res) => {
   }
 });
 
+router.post('/action/reources-list', async (req, res) => {
+  try {
+    var data = req.body;
+
+    // Check request.
+    if (Object.keys(data).length === 0 && data.constructor === Object) {
+      throw (new Error('Request body error.'));
+    }
+
+    // Query count of rows.
+    var cf = getCollectionAndField(data.type);
+    var skip = data.skip;
+    var limit = data.limit;
+
+    mongoClient.connect(
+      process.env.APP_MONGODB_LINK,
+      { useNewUrlParser: true, useUnifiedTopology: true },
+      async (error, client) => {
+        if (error) {
+          throw (new Error('MongoDB error.'));
+        }
+        db = await client.db(process.env.APP_MONGODB_NAME);
+
+        var dbPromise = () => {
+          return new Promise((resolve, reject) => {
+            db.collection(cf.collection).find().skip(skip).limit(limit).toArray(function (err, res) {
+              err ? reject(err) : resolve(res);
+            });
+          })
+        };
+
+        var qRes = await dbPromise().catch(err => console.log('error:', err.message));
+
+        var returnData = [];
+        qRes.forEach(function (row) {
+          returnData.push({
+            name: row[cf.field],
+            size: row.size,
+            Url: process.env.APP_RESOURECES_BASE_URL + '/' + cf.field + '/' + row[cf.field]
+          });
+        })
+
+        client.close();
+
+        let payload = {
+          success: true,
+          message: data.type,
+          data: returnData,
+        };
+        res.send(payload);
+      });
+  } catch (error) {
+    let payload = {
+      success: false,
+      message: error.message,
+      data: null,
+      trace: error.stack
+    };
+    console.log(error);
+    res.status(400).send(payload);
+  }
+});
+
 router.post('/action/check-reources-exist', async (req, res) => {
   try {
     var data = req.body;
