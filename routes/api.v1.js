@@ -387,7 +387,8 @@ router.get('/action/rebuild-file-index', async (req, res) => {
           "data": null,
           "trace": null
         };
-        res.status(err.status).send(payload).end();
+        res.status(err.status).send(payload);
+        return;
       }
 
       mongoClient.connect(process.env.APP_MONGODB_LINK, { useUnifiedTopology: true },
@@ -478,7 +479,7 @@ router.get('/action/rebuild-image-index', async (req, res) => {
           "data": null,
           "trace": null
         };
-        res.status(err.status).send(payload).end();
+        res.status(err.status).send(payload);
         return;
       }
 
@@ -548,12 +549,66 @@ router.get('/action/rebuild-image-index', async (req, res) => {
   }
 });
 
+router.post('/action/reources-count', async (req, res) => {
+  try {
+    var data = req.body;
+
+    // Check request.
+    if (Object.keys(data).length === 0 && data.constructor === Object) {
+      throw (new Error('Request body error.'));
+    }
+
+    // Query count of rows.
+    var cf = getCollectionAndField(data.type);
+    var query = {};
+
+    mongoClient.connect(
+      process.env.APP_MONGODB_LINK,
+      { useNewUrlParser: true, useUnifiedTopology: true },
+      async (error, client) => {
+        if (error) {
+          throw (new Error('MongoDB error.'));
+        }
+        db = await client.db(process.env.APP_MONGODB_NAME);
+
+        var dbPromise = () => {
+          return new Promise((resolve, reject) => {
+            db.collection(cf.collection).find().count({}, function (err, res) {
+              err ? reject(err) : resolve(res);
+            });
+          })
+        };
+
+        var qRes = await dbPromise().catch(err => console.log('error:', err.message));
+
+        client.close();
+
+        let payload = {
+          "success": true,
+          "message": data.type,
+          "data": qRes,
+          "trace": null
+        };
+        res.send(payload);
+      });
+  } catch (error) {
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error.stack
+    };
+    console.log(error);
+    res.status(400).send(payload);
+  }
+});
+
 router.post('/action/check-reources-exist', async (req, res) => {
   try {
     var data = req.body;
 
     if (Object.keys(data).length === 0 && data.constructor === Object) {
-      res.status(400).send();
+      res.status(400).end();
       return;
     }
 
@@ -664,7 +719,7 @@ router.get('/action/health', async (req, res) => {
       "data": null,
       "trace": err.stack
     };
-    res.status(400).send(payload).end();
+    res.status(400).send(payload);
     return;
   }
 
