@@ -108,4 +108,73 @@ router.get('/', async function (req, res, next) {
   }
 });
 
+router.get('/public/*', async (req, res) => {
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load file: ' + req.params[0] + ' correct.');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error
+    };
+    res.status(400).send(payload);
+  }
+});
+
+router.get('/file/*', async (req, res) => {
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_FILES_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load file: ' + req.params[0] + ' correct.');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error
+    };
+    res.status(400).send(payload);
+  }
+});
+
+router.get('/image/*', async (req, res) => {
+  try {
+    var path = req.params[0] ? req.params[0] : '/';
+    res.sendFile(path, { root: process.env.APP_IMAGES_STORAGE }, function (err) {
+      if (err) {
+        console.log(err);
+        res.status(err.status).end();
+      } else {
+        console.log('Load image: ' + req.params[0] + ' correct.');
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    let payload = {
+      "success": false,
+      "message": error.message,
+      "data": null,
+      "trace": error
+    };
+    res.status(400).send(payload);
+  }
+});
+
 module.exports = router;

@@ -135,8 +135,9 @@ router.post('/file/upload/fields', uploadFiles.fields([{ name: 'file', maxCount:
     var files = req.files;
 
     if (typeof files === 'undefined') {
-      console.log('File undefined.');
-      res.status(400).send();
+      let payload = 'File undefined.';
+      console.log(payload);
+      res.status(400).send(payload);
       return;
     }
 
@@ -196,8 +197,9 @@ router.post('/image/upload/single', uploadImages.single('file'), async (req, res
     var file = req.file;
 
     if (typeof file === 'undefined') {
-      console.log('File undefined.');
-      res.status(400).send();
+      let payload = 'File undefined.';
+      console.log(payload);
+      res.status(400).send(payload);
       return;
     }
 
@@ -246,8 +248,9 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
     var files = req.files;
 
     if (typeof files === 'undefined') {
-      console.log('File undefined.');
-      res.status(400).send();
+      let payload = 'File undefined.';
+      console.log(payload);
+      res.status(400).send(payload);
       return;
     }
 
@@ -300,57 +303,6 @@ router.post('/image/upload/fields', uploadImages.fields([{ name: 'file', maxCoun
       "trace": error
     };
     res.status(400).send(payload);
-  }
-});
-
-router.get('/public/*', async (req, res) => {
-  try {
-    var path = req.params[0] ? req.params[0] : '/';
-    res.sendFile(path, { root: process.env.APP_PUBLIC_STORAGE }, function (err) {
-      if (err) {
-        console.log(err);
-        res.status(err.status).end();
-      } else {
-        console.log('Load file: ' + req.params[0] + ' correct.');
-      }
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).send();
-  }
-});
-
-router.get('/file/*', async (req, res) => {
-  try {
-    var path = req.params[0] ? req.params[0] : '/';
-    res.sendFile(path, { root: process.env.APP_FILES_STORAGE }, function (err) {
-      if (err) {
-        console.log(err);
-        res.status(err.status).end();
-      } else {
-        console.log('Load file: ' + req.params[0] + ' correct.');
-      }
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).send();
-  }
-});
-
-router.get('/image/*', async (req, res) => {
-  try {
-    var path = req.params[0] ? req.params[0] : '/';
-    res.sendFile(path, { root: process.env.APP_IMAGES_STORAGE }, function (err) {
-      if (err) {
-        console.log(err);
-        res.status(err.status).end();
-      } else {
-        console.log('Load image: ' + req.params[0] + ' correct.');
-      }
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).send();
   }
 });
 
